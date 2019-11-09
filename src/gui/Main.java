@@ -8,6 +8,7 @@ import javafx.application.Application;
 
 import java.util.*;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -32,7 +33,6 @@ public class Main extends Application implements Observer<ChessBoard> {
     private ChessBoard model;
 
     private Label turnLabel;
-    private Label statusLabel;
 
     private Background black = new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY));
     private Background white = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -66,7 +66,6 @@ public class Main extends Application implements Observer<ChessBoard> {
 
     public void start( Stage mainStage ) {
         VBox topBox = new VBox();
-        HBox labelBox = new HBox();
         GridPane chessGrid = new GridPane();
 
         chessButtons = new ChessButton[8][8];
@@ -86,18 +85,19 @@ public class Main extends Application implements Observer<ChessBoard> {
         }
 
         turnLabel = new Label("Waiting for player connection");
-        statusLabel = new Label("running");
-
         turnLabel.setFont(new Font("Arial", 30));
-        statusLabel.setFont(new Font("Arial", 30));
-
-        labelBox.getChildren().add(turnLabel);
-        labelBox.getChildren().add(statusLabel);
 
         topBox.getChildren().add(chessGrid);
-        topBox.getChildren().add(labelBox);
+        topBox.getChildren().add(turnLabel);
         Scene mainScene = new Scene(topBox);
         mainStage.setScene(mainScene);
+
+
+        mainStage.setOnCloseRequest(t -> {
+            Platform.exit();
+            System.exit(0);
+        });
+
         mainStage.show();
 
         // start the network listener as the last thing
@@ -184,6 +184,9 @@ public class Main extends Application implements Observer<ChessBoard> {
             this.turnLabel.setText("You tied, Meh.");
         else if (model.getStatus() == ChessBoard.Status.I_LOST)
             this.turnLabel.setText("You lost, Boo!");
+        else if (model.getStatus() == ChessBoard.Status.ERROR)
+            this.turnLabel.setText("Opponent disconnected, they suck");
+
 
         if (!inMove) {
             for (int row = 0; row < 8; row++) {

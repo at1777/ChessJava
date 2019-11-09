@@ -19,7 +19,7 @@ public class ChessServer {
      */
     public static void main(String[] args) throws ChessException {
         if (args.length != 1) {
-            System.out.println("Usage: java ReversiServer port");
+            System.out.println("Usage: java ChessServer port");
             System.exit(1);
         }
 
