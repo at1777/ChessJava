@@ -1,3 +1,4 @@
 out/production/*
 src/*
 .idea/workspace.xml
+.idea/*
