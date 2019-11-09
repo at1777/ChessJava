@@ -37,12 +37,11 @@ public class ChessGame extends Thread {
      */
     public void run() {
         System.out.println("Starting game!");
+        this.clients[0].startgame();
+        this.clients[1].startgame();
 
         this.clients[0].setError(this::error);
         this.clients[1].setError(this::error);
-
-        this.clients[0].connect(ChessColor.BLACK);
-        this.clients[1].connect(ChessColor.WHITE);
 
         for (int moveNum = 0; !this.board.gameOver(); moveNum = (moveNum + 1) % 2) {
             ChessConnection player = this.clients[moveNum];

@@ -105,6 +105,8 @@ public class ChessConnection implements ChessProtocol {
         return this.readCommand().replace("\n", "").split(" ");
     }
 
+    public void startgame() {this.writeCommand(STARTGAME);}
+
     /**
      * Send the color info to the client
      */

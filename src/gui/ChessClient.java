@@ -261,6 +261,10 @@ public class ChessClient implements Runnable, ChessProtocol {
      * outside will call it or try to start a thread on it.
      */
     public void run() {
+        String startgame = this.networkIn.nextLine();
+        if (startgame.equals(STARTGAME))
+            game.start();
+
         while ( this.goodToGo() ) {
             try {
                 String request = this.networkIn.next();

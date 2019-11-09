@@ -249,4 +249,9 @@ public class ChessBoard {
     public Status getStatus() {
         return status;
     }
+
+    public void start() {
+        this.myTurn = false;
+        notifyObservers();
+    }
 }

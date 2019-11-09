@@ -102,9 +102,7 @@ public class Main extends Application implements Observer<ChessBoard> {
 
         // start the network listener as the last thing
         this.serverConn.startListener();
-
         this.model.addObserver(this);
-        update(this.model);
     }
 
     private boolean inMove = false;
