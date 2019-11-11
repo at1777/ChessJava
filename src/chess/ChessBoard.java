@@ -51,6 +51,7 @@ public class ChessBoard {
     private ArrayList<Piece> takenWhite;
     private boolean myTurn;
     private Status status;
+    private boolean inCheck;
 
     private ArrayList<Piece> white;
     private ArrayList<Piece> black;
@@ -71,7 +72,7 @@ public class ChessBoard {
         }
     }
 
-    public void addPiece(Piece p) {
+    private void addPiece(Piece p) {
         board[p.getRow()][p.getCol()].setPiece(p);
         if (p.getColor() == ChessColor.BLACK)
             black.add(p);
@@ -79,7 +80,7 @@ public class ChessBoard {
             white.add(p);
     }
 
-    public void initColor(ChessColor color) {
+    private void initColor(ChessColor color) {
         int pawnCol = color == ChessColor.BLACK ? 1 : 6;
         int majorCol = color == ChessColor.BLACK ? 0 : 7;
 
@@ -145,6 +146,8 @@ public class ChessBoard {
         Piece king = getPiece(c, PieceSet.KING);
         ArrayList<Piece> otherTeam = c == ChessColor.BLACK ? white : black;
         for (Piece opponent : otherTeam) {
+            if (opponent instanceof King)
+                continue;
             if (!opponent.dead() && opponent.checkMove(king.getRow(), king.getCol()))
                 return true;
         }

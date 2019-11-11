@@ -6,12 +6,16 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public abstract class Piece {
-    ChessBoard parent;
+    /* Package private */
+    private ChessBoard parent;
+
+    /* Private */
     private int row;
     private int col;
     private ChessColor color;
     private boolean isDead;
     private ImageView image;
+    private boolean moved;
 
     public Piece(ChessBoard parent, ChessColor color, int startRow, int startCol) {
         this.parent = parent;
@@ -19,6 +23,7 @@ public abstract class Piece {
         this.row = startRow;
         this.col = startCol;
         this.isDead = false;
+        this.moved = false;
 
         String imageName = String.format("%s_%s.png",
                 getClass().getSimpleName().toLowerCase(),
@@ -71,7 +76,7 @@ public abstract class Piece {
         return rowTrue && colTrue;
     }
 
-    boolean checkPiece(int row, int col, int dr, int dc) {
+    private boolean checkPiece(int row, int col, int dr, int dc) {
         int r = getRow() + dr;
         int c = getCol() + dc;
         for (; r < 8 && r >= 0 && c < 8 && c >= 0; r += dr, c += dc) {
@@ -111,5 +116,14 @@ public abstract class Piece {
     public void move(int row, int col) {
         this.row = row;
         this.col = col;
+        this.moved = true;
+    }
+
+    boolean getMoved() {
+        return this.moved;
+    }
+
+    ChessBoard getParent() {
+        return this.parent;
     }
 }

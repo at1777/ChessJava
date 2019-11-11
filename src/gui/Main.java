@@ -33,12 +33,14 @@ public class Main extends Application implements Observer<ChessBoard> {
     private ChessBoard model;
 
     private Label turnLabel;
+    private Label checkLabel;
 
     private Background black = new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY));
     private Background white = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     private Background green = new Background(new BackgroundFill(Color.LIGHTGREEN, CornerRadii.EMPTY, Insets.EMPTY));
 
     private ChessButton[][] chessButtons;
+    private Piece currentSelect;
 
     /**
      * Create the board model, create the network connection based on
@@ -66,6 +68,7 @@ public class Main extends Application implements Observer<ChessBoard> {
 
     public void start( Stage mainStage ) {
         VBox topBox = new VBox();
+        HBox labelBox = new HBox();
         GridPane chessGrid = new GridPane();
 
         chessButtons = new ChessButton[8][8];
@@ -87,8 +90,15 @@ public class Main extends Application implements Observer<ChessBoard> {
         turnLabel = new Label("Waiting for player connection");
         turnLabel.setFont(new Font("Arial", 30));
 
+        checkLabel = new Label("");
+        checkLabel.setFont(new Font("Arial", 30));
+
+        labelBox.getChildren().addAll(turnLabel, checkLabel);
+
+        labelBox.setSpacing(25);
+
         topBox.getChildren().add(chessGrid);
-        topBox.getChildren().add(turnLabel);
+        topBox.getChildren().add(labelBox);
         Scene mainScene = new Scene(topBox);
         mainStage.setScene(mainScene);
 
@@ -105,29 +115,29 @@ public class Main extends Application implements Observer<ChessBoard> {
         this.model.addObserver(this);
     }
 
-    private boolean inMove = false;
-    private int moveRow;
-    private int moveCol;
-
-    public void handleButton(ActionEvent e) {
+    private synchronized void handleButton(ActionEvent e) {
         ChessButton parentButton = (ChessButton)e.getSource();
-        if (inMove && parentButton.getCol() == moveCol && parentButton.getRow() == moveRow) {
-            inMove = false;
-            update(this.model);
-            return;
+        if (currentSelect != null
+                && parentButton.getCol() == currentSelect.getCol()
+                && parentButton.getRow() == currentSelect.getRow()) {
+            // Disable this move (make a different one)
+            for (int row = 0; row < 8; row++)
+                for (int col = 0; col < 8; col++)
+                    setGraphic(this.model, chessButtons[row][col]);
+            currentSelect = null;
         }
-
-        if (inMove) {
-            inMove = false;
+        else if (currentSelect != null) {
+            // No longer your turn (you made a move)
             disableBoard();
-            this.serverConn.sendMove(moveRow, moveCol, parentButton.getRow(), parentButton.getCol());
-            return;
+            this.serverConn.sendMove(
+                    currentSelect.getRow(), currentSelect.getCol(), // Piece to move
+                    parentButton.getRow(), parentButton.getCol());
+            currentSelect = null;
         }
-
-        moveRow = parentButton.getRow();
-        moveCol = parentButton.getCol();
-        inMove = true;
-        update(this.model);
+        else {
+            currentSelect = model.pieceAt(parentButton.getRow(), parentButton.getCol());
+            showMoves();
+        }
     }
 
     /**
@@ -169,8 +179,27 @@ public class Main extends Application implements Observer<ChessBoard> {
         }
     }
 
+    private void showMoves() {
+        Piece p = this.model.pieceAt(currentSelect.getRow(), currentSelect.getCol());
+        if (p == null)
+            return;
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                if (p.checkMove(row, col)) {
+                    chessButtons[row][col].setDisable(false);
+                    chessButtons[row][col].setBackground(green);
+                }
+                else
+                    chessButtons[row][col].setDisable(true);
+            }
+        }
+
+        /* Allow this move to be turned off */
+        chessButtons[currentSelect.getRow()][currentSelect.getCol()].setDisable(false);
+    }
+
     @Override
-    public void update(ChessBoard board) {
+    public synchronized void update(ChessBoard board) {
         if (model.isMyTurn())
             this.turnLabel.setText("Your turn");
         else
@@ -185,34 +214,14 @@ public class Main extends Application implements Observer<ChessBoard> {
         else if (model.getStatus() == ChessBoard.Status.ERROR)
             this.turnLabel.setText("Opponent disconnected, they suck");
 
+        if (model.check(serverConn.getPlayerColor()))
+            this.checkLabel.setText("Check!!");
+        else
+            this.checkLabel.setText("");
 
-        if (!inMove) {
-            for (int row = 0; row < 8; row++) {
-                for (int col = 0; col < 8; col++) {
-                    setGraphic(board, chessButtons[row][col]);
-                }
-            }
-        }
-
-        if (!model.isMyTurn()) {
-            disableBoard();
-            return;
-        }
-
-        if (inMove) {
-            Piece p = board.pieceAt(moveRow, moveCol);
-            for (int row = 0; row < 8; row++) {
-                for (int col = 0; col < 8; col++) {
-                    if (p.checkMove(row, col)) {
-                        chessButtons[row][col].setDisable(false);
-                        chessButtons[row][col].setBackground(green);
-                    }
-                    else
-                        chessButtons[row][col].setDisable(true);
-                }
-            }
-            chessButtons[moveRow][moveCol].setDisable(false);
-        }
+        for (int row = 0; row < 8; row++)
+            for (int col = 0; col < 8; col++)
+                setGraphic(this.model, chessButtons[row][col]);
     }
 
 }

@@ -21,13 +21,14 @@ public class Pawn extends Piece {
 
         if (newRow == getRow()) {
             if (getCol() == startCol && getCol() + forwardDr * 2 == newCol)
-                return checkPiece(newRow, newCol, 0, forwardDr);
-            return getCol() + forwardDr == newCol && parent.pieceAt(newRow, newCol) == null;
+                return getParent().pieceAt(newRow, getCol() + forwardDr) == null
+                        && getParent().pieceAt(newRow, newCol) == null;
+            return getCol() + forwardDr == newCol && getParent().pieceAt(newRow, newCol) == null;
         }
         else if (getRow() + 1 == newRow || getRow() - 1 == newRow) {
             return getCol() + forwardDr == newCol
-                    && parent.pieceAt(newRow, newCol) != null
-                    && parent.pieceAt(newRow, newCol).getColor() != getColor();
+                    && getParent().pieceAt(newRow, newCol) != null
+                    && getParent().pieceAt(newRow, newCol).getColor() != getColor();
         }
 
         return false;
