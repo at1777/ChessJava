@@ -231,50 +231,18 @@ public class ChessClient implements Runnable, ChessProtocol {
     }
 
     void sendChose(Piece p) {
-        this.networkOut.printf("%s %s %d %d\n", CHOSE, p.getName(), p.getRow(), p.getCol());
-
+        System.out.printf("%s %s %s %d %d\n", CHOSE, p.getName(), p.getColor().name(), p.getRow(), p.getCol());
+        this.networkOut.printf("%s %s %s %d %d\n", CHOSE, p.getName(), p.getColor().name(), p.getRow(), p.getCol());
     }
 
-    void chose(String arguments) {
+    private void chose(String arguments) {
         String[] args = arguments.split(" ");
-        Piece p = null;
-
-        switch(args[0]) {
-            case "QUEEN":
-                p = new Queen(
-                        game,
-                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
-                        parseInt(args[1]),
-                        parseInt(args[2])
-                );
-                break;
-            case "BISHOP":
-                p = new Bishop(
-                        game,
-                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
-                        parseInt(args[1]),
-                        parseInt(args[2])
-                );
-                break;
-            case "KNIGHT":
-                p = new Knight(
-                        game,
-                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
-                        parseInt(args[1]),
-                        parseInt(args[2])
-                );
-                break;
-            case "CASTLE":
-                p = new Castle(
-                        game,
-                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
-                        parseInt(args[1]),
-                        parseInt(args[2])
-                );
-                break;
-            default:
-                System.err.printf("Cannot create piece %s\n", args[0]);
-        }
+        Piece p = Piece.createPiece(
+                game,
+                ChessColor.valueOf(args[2]),
+                args[1],
+                parseInt(args[3]),
+                parseInt(args[4]));
 
         this.game.chosePiece(p);
     }

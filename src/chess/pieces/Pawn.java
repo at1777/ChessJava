@@ -38,7 +38,7 @@ public class Pawn extends Piece {
     @Override
     public void move(int newRow, int newCol) throws PawnInterrupt {
         super.move(newRow, newCol);
-        if (reachedEnd())
+        if (reachedEnd() && getParent().getObserverColor() == getColor())
             throw new PawnInterrupt(this);
     }
 

@@ -122,6 +122,10 @@ public class Main extends Application implements Observer<ChessBoard> {
         this.model.addObserver(this);
     }
 
+    public ChessColor getColor() {
+        return serverConn.getPlayerColor();
+    }
+    
     private synchronized void handleButton(ActionEvent e) {
         ChessButton parentButton = (ChessButton)e.getSource();
         if (currentSelect != null
@@ -183,7 +187,7 @@ public class Main extends Application implements Observer<ChessBoard> {
         Piece p = m.getPiece();
         if (p != null) {
             b.setGraphic(p.getImage());
-            if (p.getColor() == serverConn.getPlayerColor() && model.isMyTurn())
+            if (p.getColor() == getColor() && model.isMyTurn())
                 b.setDisable(false);
             else
                 b.setDisable(true);
@@ -213,22 +217,24 @@ public class Main extends Application implements Observer<ChessBoard> {
         chessButtons[currentSelect.getRow()][currentSelect.getCol()].setDisable(false);
     }
 
-    private Popup choosePiece() {
+    private Popup choosePiece(int row, int col) {
         final Popup popup = new Popup();
-        popup.setX(300);
-        popup.setY(200);
+        popup.setX(350);
+        popup.setY(260);
 
         HBox chooseBox = new HBox();
 
-        Button castleButton = new PromotionButton(this, new Castle(model, serverConn.getPlayerColor(), 0, 0));
-        Button bishopButton = new PromotionButton(this, new Bishop(model, serverConn.getPlayerColor(), 0, 0));
-        Button knightButton = new PromotionButton(this, new Knight(model, serverConn.getPlayerColor(), 0, 0));
-        Button queenButton = new PromotionButton(this, new Queen(model, serverConn.getPlayerColor(), 0, 0));
+        Button castleButton = new PromotionButton(this, new Castle(model, getColor(), row, col));
+        Button bishopButton = new PromotionButton(this, new Bishop(model, getColor(), row, col));
+        Button knightButton = new PromotionButton(this, new Knight(model, getColor(), row, col));
+        Button queenButton = new PromotionButton(this, new Queen(model, getColor(), row, col));
 
         chooseBox.getChildren().addAll(castleButton, bishopButton, knightButton, queenButton);
 
-        popup.getContent().add(new Label("Choose a piece"));
-        popup.getContent().add(chooseBox);
+        VBox top = new VBox();
+        top.getChildren().addAll(new Label("Choose a piece"), chooseBox);
+
+        popup.getContent().add(top);
 
         popup.show(this.mainStage);
 
@@ -251,13 +257,13 @@ public class Main extends Application implements Observer<ChessBoard> {
         else if (model.getStatus() == ChessBoard.Status.ERROR)
             this.turnLabel.setText("Opponent disconnected, they suck");
 
-        if (model.check(serverConn.getPlayerColor()))
+        if (model.check(getColor()))
             this.checkLabel.setText("Check!!");
         else
             this.checkLabel.setText("");
 
         if (this.model.awaitingPromotion())
-            choosePieceWindow = choosePiece();
+            choosePieceWindow = choosePiece(model.awaiting().getRow(), model.awaiting().getRow());
         else if (choosePieceWindow != null) {
             choosePieceWindow.hide();
             choosePieceWindow = null;

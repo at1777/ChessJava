@@ -1,5 +1,7 @@
 package gui;
 
+import chess.ChessColor;
+
 /**
  * An interface representing any class whose objects get notified when
  * the objects they are observing update themselves.
@@ -29,5 +31,7 @@ public interface Observer< Subject > {
      * Observer design pattern</a>
      */
     void update(Subject subject);
+
+    ChessColor getColor();
 
 }

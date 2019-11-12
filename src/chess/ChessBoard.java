@@ -54,6 +54,7 @@ public class ChessBoard {
     private Status status;
     private boolean inCheck;
     private Piece awaitingPromotion; /* Pawn that made it to the end of the board */
+    private ChessColor observerColor;
 
     private ArrayList<Piece> white;
     private ArrayList<Piece> black;
@@ -67,6 +68,7 @@ public class ChessBoard {
         black = new ArrayList<>();
         myTurn = false;
         awaitingPromotion = null;
+        observerColor = null;
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -173,6 +175,11 @@ public class ChessBoard {
     /* View to Model */
     public void addObserver(Observer<ChessBoard> observer){
         observers.add(observer);
+        observerColor = observer.getColor();
+    }
+
+    public ChessColor getObserverColor() {
+        return observerColor;
     }
 
     private void notifyObservers(){
@@ -196,6 +203,10 @@ public class ChessBoard {
         notifyObservers();
     }
 
+    public Piece awaiting() {
+        return awaitingPromotion;
+    }
+
     public void chosePiece(Piece p) {
         if (awaitingPromotion != null) {
             try {
@@ -204,7 +215,12 @@ public class ChessBoard {
         }
 
         board[p.getRow()][p.getCol()].setPiece(p);
-        awaitingPromotion = null;
+        if (awaitingPromotion != null) {
+            awaitingPromotion = null;
+            myTurn = false;
+        }
+        else
+            myTurn = true;
         notifyObservers();
     }
 

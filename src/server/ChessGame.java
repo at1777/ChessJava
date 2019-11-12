@@ -61,9 +61,12 @@ public class ChessGame extends Thread {
 
             if (!move[0].equals(ChessConnection.MOVE)) {
                 if (move[0].equals(ChessConnection.CHOSE)) {
-                    Piece p = Piece.createPiece(this.board, player.getColor(), move[1], parseInt(move[2]), parseInt(move[3]));
+                    Piece p = Piece.createPiece(this.board, ChessColor.valueOf(move[2]), move[1], parseInt(move[3]), parseInt(move[4]));
                     this.board.chosePiece(p);
-                    this.clients[(moveNum + 1) % 2].chose(p.getName(), p.getRow(), p.getCol());
+                    this.clients[0].chose(p);
+                    this.clients[1].chose(p);
+                    moveNum++;
+                    continue;
                 }
 
                 if (error)

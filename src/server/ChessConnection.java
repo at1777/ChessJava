@@ -1,6 +1,7 @@
 package server;
 
 import chess.ChessColor;
+import chess.pieces.Piece;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -77,8 +78,8 @@ public class ChessConnection implements ChessProtocol {
         this.clientOut.println(String.format(fmt, args));
     }
 
-    void chose(String pieceName, int row, int col) {
-        writeCommand("%s %s %d %d", CHOSE, pieceName, row, col);
+    void chose(Piece p) {
+        writeCommand("%s %s %s %d %d", CHOSE, p.getName(), p.getColor().name(), p.getRow(), p.getCol());
     }
 
     /**

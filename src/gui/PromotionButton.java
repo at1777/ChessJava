@@ -29,7 +29,6 @@ class PromotionButton extends Button {
 
     private static void handle(ActionEvent e) {
         PromotionButton target = (PromotionButton)e.getSource();
-        target.getMain().getModel().chosePiece(target.getTargetPiece());
-        target.getMain().getClient().chose(target.getTargetPiece().getName());
+        target.getMain().getClient().sendChose(target.getTargetPiece());
     }
 }
