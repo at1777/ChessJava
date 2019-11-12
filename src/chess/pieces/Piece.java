@@ -4,6 +4,7 @@ import chess.ChessBoard;
 import chess.ChessColor;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import server.PawnInterrupt;
 
 public abstract class Piece {
     /* Package private */
@@ -113,7 +114,7 @@ public abstract class Piece {
         return false;
     }
 
-    public void move(int row, int col) {
+    public void move(int row, int col) throws PawnInterrupt {
         this.row = row;
         this.col = col;
         this.moved = true;
@@ -125,5 +126,32 @@ public abstract class Piece {
 
     ChessBoard getParent() {
         return this.parent;
+    }
+
+    public String getName() {
+        return getClass().getSimpleName().toUpperCase();
+    }
+
+    public static Piece createPiece(ChessBoard parent, ChessColor color, String name, int row, int col) {
+        Piece p = null;
+        switch (name) {
+            case "QUEEN":
+                p = new Queen(parent, color, row, col);
+                break;
+            case "BISHOP":
+                p = new Bishop(parent, color, row, col);
+                break;
+            case "KNIGHT":
+                p = new Knight(parent, color, row, col);
+                break;
+            case "CASTLE":
+                p = new Castle(parent, color, row, col);
+                break;
+            default:
+                System.err.printf("Cannot create piece %s\n", name);
+                System.exit(1);
+        }
+
+        return p;
     }
 }

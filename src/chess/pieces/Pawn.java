@@ -2,6 +2,7 @@ package chess.pieces;
 
 import chess.ChessBoard;
 import chess.ChessColor;
+import server.PawnInterrupt;
 
 public class Pawn extends Piece {
     private int startCol;
@@ -32,5 +33,16 @@ public class Pawn extends Piece {
         }
 
         return false;
+    }
+
+    @Override
+    public void move(int newRow, int newCol) throws PawnInterrupt {
+        super.move(newRow, newCol);
+        if (reachedEnd())
+            throw new PawnInterrupt(this);
+    }
+
+    private boolean reachedEnd() {
+        return getColor() == ChessColor.WHITE ? getCol() == 0 : getCol() == 7;
     }
 }

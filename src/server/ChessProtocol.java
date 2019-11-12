@@ -21,6 +21,12 @@ public interface ChessProtocol {
 
     String STARTGAME = "STARTGAME";
 
+    /* CHOOSE row col */
+    String CHOOSE = "CHOOSE";
+
+    /* CHOSE QUEEN/BISHOP/KNIGHT/CASTLE */
+    String CHOSE = "CHOSE";
+
     /**
      * Request sent from the reversi.server to the client when it is the client's turn
      * to make a move.

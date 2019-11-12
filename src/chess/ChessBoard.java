@@ -4,6 +4,7 @@ import chess.pieces.*;
 import gui.Observer;
 import javafx.application.Platform;
 import server.ChessException;
+import server.PawnInterrupt;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -52,6 +53,7 @@ public class ChessBoard {
     private boolean myTurn;
     private Status status;
     private boolean inCheck;
+    private Piece awaitingPromotion; /* Pawn that made it to the end of the board */
 
     private ArrayList<Piece> white;
     private ArrayList<Piece> black;
@@ -64,6 +66,7 @@ public class ChessBoard {
         white = new ArrayList<>();
         black = new ArrayList<>();
         myTurn = false;
+        awaitingPromotion = null;
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -123,7 +126,7 @@ public class ChessBoard {
         p.die();
     }
 
-    public void movePiece(Piece p, int row, int col) throws ChessException {
+    public void movePiece(Piece p, int row, int col) throws ChessException, PawnInterrupt {
         Piece toMove = board[p.getRow()][p.getCol()].setPiece(null);
         if (p != toMove)
             throw new ChessException("State of Piece not updated correctly");
@@ -136,7 +139,7 @@ public class ChessBoard {
         toMove.move(row, col);
     }
 
-    public Piece getPiece(ChessColor color, PieceSet piece) {
+    private Piece getPiece(ChessColor color, PieceSet piece) {
         if (color == ChessColor.BLACK)
             return black.get(piece.ordinal());
         return white.get(piece.ordinal());
@@ -178,7 +181,7 @@ public class ChessBoard {
         }
     }
 
-    public void moveMade(int startRow, int startCol, int row, int col) throws ChessException {
+    public void moveMade(int startRow, int startCol, int row, int col) throws ChessException, PawnInterrupt {
         Piece p = pieceAt(startRow, startCol);
         if (p == null)
             throw new ChessException(String.format("Piece at %d,%d", startRow, startCol));
@@ -190,6 +193,27 @@ public class ChessBoard {
 
     public void makeMove() {
         myTurn = true;
+        notifyObservers();
+    }
+
+    public void chosePiece(Piece p) {
+        if (awaitingPromotion != null) {
+            try {
+                p.move(awaitingPromotion.getRow(), awaitingPromotion.getCol());
+            } catch (PawnInterrupt ignored) {}
+        }
+
+        board[p.getRow()][p.getCol()].setPiece(p);
+        awaitingPromotion = null;
+        notifyObservers();
+    }
+
+    public boolean awaitingPromotion() {
+        return awaitingPromotion != null;
+    }
+
+    public void choosePiece(Piece pawn) {
+        awaitingPromotion = pawn;
         notifyObservers();
     }
 

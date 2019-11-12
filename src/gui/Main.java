@@ -3,7 +3,7 @@ package gui;
 import chess.ChessBoard;
 import chess.ChessColor;
 import chess.Place;
-import chess.pieces.Piece;
+import chess.pieces.*;
 import javafx.application.Application;
 
 import java.util.*;
@@ -12,10 +12,12 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import server.ChessException;
 
@@ -34,6 +36,8 @@ public class Main extends Application implements Observer<ChessBoard> {
 
     private Label turnLabel;
     private Label checkLabel;
+    private Stage mainStage;
+    private Popup choosePieceWindow;
 
     private Background black = new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY));
     private Background white = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -66,10 +70,13 @@ public class Main extends Application implements Observer<ChessBoard> {
         }
     }
 
-    public void start( Stage mainStage ) {
+    public void start( Stage __mainStage ) {
         VBox topBox = new VBox();
         HBox labelBox = new HBox();
         GridPane chessGrid = new GridPane();
+
+        this.mainStage = __mainStage;
+        choosePieceWindow = null;
 
         chessButtons = new ChessButton[8][8];
         model.initBoard();
@@ -140,6 +147,14 @@ public class Main extends Application implements Observer<ChessBoard> {
         }
     }
 
+    ChessBoard getModel() {
+        return model;
+    }
+
+    ChessClient getClient() {
+        return serverConn;
+    }
+
     /**
      * Launch the JavaFX GUI.
      *
@@ -198,6 +213,28 @@ public class Main extends Application implements Observer<ChessBoard> {
         chessButtons[currentSelect.getRow()][currentSelect.getCol()].setDisable(false);
     }
 
+    private Popup choosePiece() {
+        final Popup popup = new Popup();
+        popup.setX(300);
+        popup.setY(200);
+
+        HBox chooseBox = new HBox();
+
+        Button castleButton = new PromotionButton(this, new Castle(model, serverConn.getPlayerColor(), 0, 0));
+        Button bishopButton = new PromotionButton(this, new Bishop(model, serverConn.getPlayerColor(), 0, 0));
+        Button knightButton = new PromotionButton(this, new Knight(model, serverConn.getPlayerColor(), 0, 0));
+        Button queenButton = new PromotionButton(this, new Queen(model, serverConn.getPlayerColor(), 0, 0));
+
+        chooseBox.getChildren().addAll(castleButton, bishopButton, knightButton, queenButton);
+
+        popup.getContent().add(new Label("Choose a piece"));
+        popup.getContent().add(chooseBox);
+
+        popup.show(this.mainStage);
+
+        return popup;
+    }
+
     @Override
     public synchronized void update(ChessBoard board) {
         if (model.isMyTurn())
@@ -218,6 +255,13 @@ public class Main extends Application implements Observer<ChessBoard> {
             this.checkLabel.setText("Check!!");
         else
             this.checkLabel.setText("");
+
+        if (this.model.awaitingPromotion())
+            choosePieceWindow = choosePiece();
+        else if (choosePieceWindow != null) {
+            choosePieceWindow.hide();
+            choosePieceWindow = null;
+        }
 
         for (int row = 0; row < 8; row++)
             for (int col = 0; col < 8; col++)

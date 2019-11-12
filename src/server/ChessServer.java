@@ -48,8 +48,6 @@ public class ChessServer {
             for (int clientNum = 0; clientNum < 2; clientNum++) {
                 System.out.printf("Waiting for player %s...\n", clientNum == 0 ? "one" : "two");
 
-
-
                 /* Waits for accept or returns if someone else connected previously */
                 clients[clientNum] = this.listen.getConnection();
                 System.out.printf("Player %s connected! %s\n", clientNum == 0 ? "one" : "two", clients[clientNum]);

@@ -2,8 +2,9 @@ package server;
 
 import chess.ChessBoard;
 import chess.ChessColor;
-import chess.pieces.Piece;
-import server.ChessConnection;
+import chess.pieces.*;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * Handles all the game operations given two connection
@@ -22,7 +23,7 @@ public class ChessGame extends Thread {
      * @param player_one first player
      * @param player_two second player
      */
-    public ChessGame(ChessConnection player_one, ChessConnection player_two) {
+    ChessGame(ChessConnection player_one, ChessConnection player_two) {
         this.clients = new ChessConnection[2];
         this.error = false;
 
@@ -59,6 +60,12 @@ public class ChessGame extends Thread {
             }
 
             if (!move[0].equals(ChessConnection.MOVE)) {
+                if (move[0].equals(ChessConnection.CHOSE)) {
+                    Piece p = Piece.createPiece(this.board, player.getColor(), move[1], parseInt(move[2]), parseInt(move[3]));
+                    this.board.chosePiece(p);
+                    this.clients[(moveNum + 1) % 2].chose(p.getName(), p.getRow(), p.getCol());
+                }
+
                 if (error)
                     break;
 
@@ -75,7 +82,12 @@ public class ChessGame extends Thread {
             try {
                 Piece p = this.board.pieceAt(startRow, startCol);
                 this.board.movePiece(p, row, col);
-            } catch (Exception e) {
+            }
+            catch (PawnInterrupt e) {
+                this.board.choosePiece(e.getPawn());
+                this.clients[(moveNum + 1) % 2].choose(e.getPawn().getRow(), e.getPawn().getCol());
+            }
+            catch (ChessException e) {
                 e.printStackTrace();
                 error();
                 break;

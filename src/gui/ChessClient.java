@@ -3,14 +3,18 @@ package gui;
 
 import chess.ChessBoard;
 import chess.ChessColor;
+import chess.pieces.*;
 import server.ChessException;
 import server.ChessProtocol;
+import server.PawnInterrupt;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * The client side network interface to a Reversi game server.
@@ -99,7 +103,7 @@ public class ChessClient implements Runnable, ChessProtocol {
      *                 must be updated upon receiving server messages
      * @throws ChessException If there is a problem opening the connection
      */
-    public ChessClient( String hostname, int port, ChessBoard model )
+    ChessClient( String hostname, int port, ChessBoard model )
             throws ChessException {
         try {
             this.sock = new Socket( hostname, port );
@@ -121,7 +125,7 @@ public class ChessClient implements Runnable, ChessProtocol {
         }
     }
 
-    public void startListener() {
+    void startListener() {
         // Run rest of client in separate thread.
         // This threads stops on its own at the end of the game and
         // does not need to rendezvous with other software components.
@@ -129,7 +133,7 @@ public class ChessClient implements Runnable, ChessProtocol {
         netThread.start();
     }
 
-    public ChessColor getPlayerColor() {
+    ChessColor getPlayerColor() {
         return playerColor;
     }
 
@@ -141,9 +145,8 @@ public class ChessClient implements Runnable, ChessProtocol {
      *
      * @param arguments string from the server's message that
      *                  contains the square dimension of the board
-     * @throws ChessException if the dimensions be small
      */
-    public void connect( String arguments ) throws ChessException {
+    private void connect( String arguments ) {
         playerColor = arguments.trim().equals("WHITE") ? ChessColor.WHITE : ChessColor.BLACK;
 
         // Get the board state set up.
@@ -165,18 +168,22 @@ public class ChessClient implements Runnable, ChessProtocol {
      *                  contains the row, then column where the
      *                  player made the move
      */
-    public void moveMade( String arguments ) {
+    private void moveMade( String arguments ) {
         ChessClient.dPrint( '!' + MOVE_MADE + ',' + arguments );
 
         String[] fields = arguments.trim().split( " " );
-        int startRow = Integer.parseInt( fields[ 0 ] );
-        int startCol = Integer.parseInt( fields[ 1 ] );
-        int row = Integer.parseInt( fields[ 2 ] );
-        int column = Integer.parseInt( fields[ 3 ] );
+        int startRow = parseInt( fields[ 0 ] );
+        int startCol = parseInt( fields[ 1 ] );
+        int row = parseInt( fields[ 2 ] );
+        int column = parseInt( fields[ 3 ] );
 
         // Update the board model.
         try {
             this.game.moveMade(startRow, startCol, row, column);
+        }
+        catch (PawnInterrupt p) {
+            if (p.getPawn().getColor() == getPlayerColor())
+                this.game.choosePiece(this.game.pieceAt(row, column));
         }
         catch (ChessException e) {
             e.printStackTrace();
@@ -188,7 +195,7 @@ public class ChessClient implements Runnable, ChessProtocol {
      * Called when the server sends a message saying that the
      * game has been won by this player. Ends the game.
      */
-    public void gameWon() {
+    private void gameWon() {
         ChessClient.dPrint( '!' + GAME_WON );
 
         dPrint( "You won! Yay!" );
@@ -200,7 +207,7 @@ public class ChessClient implements Runnable, ChessProtocol {
      * Called when the server sends a message saying that the
      * game has been won by the other player. Ends the game.
      */
-    public void gameLost() {
+    private void gameLost() {
         ChessClient.dPrint( '!' + GAME_LOST );
         dPrint( "You lost! Boo!" );
         this.game.gameLost();
@@ -211,11 +218,65 @@ public class ChessClient implements Runnable, ChessProtocol {
      * Called when the server sends a message saying that the
      * game is a tie. Ends the game.
      */
-    public void gameTied() {
+    private void gameTied() {
         ChessClient.dPrint( '!' + GAME_TIED );
         dPrint( "You tied! Meh!" );
         this.game.gameTied();
         this.stop();
+    }
+
+    private void choose(String arguments) {
+        String[] args = arguments.split(" ");
+        this.game.choosePiece(game.pieceAt(parseInt(args[0]), parseInt(args[1])));
+    }
+
+    void sendChose(Piece p) {
+        this.networkOut.printf("%s %s %d %d\n", CHOSE, p.getName(), p.getRow(), p.getCol());
+
+    }
+
+    void chose(String arguments) {
+        String[] args = arguments.split(" ");
+        Piece p = null;
+
+        switch(args[0]) {
+            case "QUEEN":
+                p = new Queen(
+                        game,
+                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
+                        parseInt(args[1]),
+                        parseInt(args[2])
+                );
+                break;
+            case "BISHOP":
+                p = new Bishop(
+                        game,
+                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
+                        parseInt(args[1]),
+                        parseInt(args[2])
+                );
+                break;
+            case "KNIGHT":
+                p = new Knight(
+                        game,
+                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
+                        parseInt(args[1]),
+                        parseInt(args[2])
+                );
+                break;
+            case "CASTLE":
+                p = new Castle(
+                        game,
+                        getPlayerColor() == ChessColor.WHITE ? ChessColor.BLACK : ChessColor.WHITE,
+                        parseInt(args[1]),
+                        parseInt(args[2])
+                );
+                break;
+            default:
+                System.err.printf("Cannot create piece %s\n", args[0]);
+        }
+
+        this.game.chosePiece(p);
     }
 
     /**
@@ -224,7 +285,7 @@ public class ChessClient implements Runnable, ChessProtocol {
      *
      * @param arguments The error message sent from the reversi.server.
      */
-    public void error( String arguments ) {
+    private void error( String arguments ) {
         ChessClient.dPrint( '!' + ERROR + ',' + arguments );
         dPrint( "Fatal error: " + arguments );
         this.game.error( arguments );
@@ -235,7 +296,7 @@ public class ChessClient implements Runnable, ChessProtocol {
      * This method should be called at the end of the game to
      * close the client connection.
      */
-    public void close() {
+    private void close() {
         try {
             this.sock.close();
         }
@@ -251,7 +312,7 @@ public class ChessClient implements Runnable, ChessProtocol {
      * @param row the row
      * @param col the column
      */
-    public void sendMove( int startRow, int startCol, int row, int col ) {
+    void sendMove( int startRow, int startCol, int row, int col ) {
         this.networkOut.printf("%s %d %d %d %d\n", MOVE, startRow, startCol, row, col);
     }
 
@@ -280,6 +341,12 @@ public class ChessClient implements Runnable, ChessProtocol {
                         break;
                     case MAKE_MOVE:
                         makeMove();
+                        break;
+                    case CHOOSE:
+                        choose(arguments);
+                        break;
+                    case CHOSE:
+                        chose(arguments);
                         break;
                     case MOVE_MADE:
                         moveMade( arguments );

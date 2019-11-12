@@ -4,5 +4,4 @@ module ChessJava {
     exports chess;
     exports gui;
     exports server;
-
 }

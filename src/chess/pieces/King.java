@@ -3,6 +3,7 @@ package chess.pieces;
 import chess.ChessBoard;
 import chess.ChessColor;
 import server.ChessException;
+import server.PawnInterrupt;
 
 public class King extends Piece {
 
@@ -45,7 +46,7 @@ public class King extends Piece {
     }
 
     @Override
-    public void move(int row, int col) {
+    public void move(int row, int col) throws PawnInterrupt {
         if (!isAdjacent(row, col)) {
             /* We are castling */
             super.move(row, col);

@@ -10,7 +10,7 @@ import java.net.Socket;
 
 /**
  * Wraps the Socket in a reader and writer.
- * Can send and parse ReversiProtocol
+ * Can send and parse ChessProtocol
  *
  * @author Andrei Tumbar
  */
@@ -19,14 +19,16 @@ public class ChessConnection implements ChessProtocol {
     private PrintWriter clientOut;
     private BufferedReader clientIn;
     private Runnable runOnError;
+    private ChessColor color;
 
     /**
      * Create a new connection, wrap socket for reading and writing
      * @param clientSocket socket to wrap
      */
-    public ChessConnection(Socket clientSocket) {
+    ChessConnection(Socket clientSocket) {
         this.clientSocket = clientSocket;
         this.runOnError = null;
+        color = null;
 
         try {
             clientIn = new BufferedReader(
@@ -42,8 +44,12 @@ public class ChessConnection implements ChessProtocol {
      * Tell handle error what to call to close the other connection
      * @param error function to run
      */
-    public void setError(Runnable error) {
+    void setError(Runnable error) {
         this.runOnError = error;
+    }
+
+    ChessColor getColor() {
+        return color;
     }
 
     /**
@@ -71,10 +77,14 @@ public class ChessConnection implements ChessProtocol {
         this.clientOut.println(String.format(fmt, args));
     }
 
+    void chose(String pieceName, int row, int col) {
+        writeCommand("%s %s %d %d", CHOSE, pieceName, row, col);
+    }
+
     /**
      * Close this socket
      */
-    public void close() {
+    void close() {
         try {
             this.clientSocket.close();
         } catch (IOException e) {
@@ -101,30 +111,35 @@ public class ChessConnection implements ChessProtocol {
      * Parse a command by splitting it by spaces
      * @return list of space delimited tokens
      */
-    public String[] parseCommand() {
+    String[] parseCommand() {
         return this.readCommand().replace("\n", "").split(" ");
     }
 
-    public void startgame() {this.writeCommand(STARTGAME);}
+    void choose(int row, int col) {
+        this.writeCommand("%s %d %d", CHOOSE, row, col);
+    }
+
+    void startgame() {this.writeCommand(STARTGAME);}
 
     /**
      * Send the color info to the client
      */
-    public void connect(ChessColor color) {
+    void connect(ChessColor color) {
+        this.color = color;
         this.writeCommand("%s %s", CONNECT, color.name());
     }
 
     /**
      * Tell the client there was an error
      */
-    public void error() {
+    void error() {
         this.writeCommand(ERROR);
     }
 
     /**
      * Tell the client to make a move
      */
-    public void make_move() {
+    void make_move() {
         this.writeCommand(MAKE_MOVE);
     }
 
@@ -133,28 +148,28 @@ public class ChessConnection implements ChessProtocol {
      * @param row row that move was made
      * @param col col that move was made
      */
-    public void move_made(int startRow, int startCol, int row, int col) {
+    void move_made(int startRow, int startCol, int row, int col) {
         this.writeCommand("%s %d %d %d %d", MOVE_MADE, startRow, startCol, row, col);
     }
 
     /**
      * Tell the client that they lost the game
      */
-    public void game_lost() {
+    void game_lost() {
         this.writeCommand(GAME_LOST);
     }
 
     /**
      * Tell the client that they won the game
      */
-    public void game_won() {
+    void game_won() {
         this.writeCommand(GAME_WON);
     }
 
     /**
      * Tell the client that they tied the game
      */
-    public void game_tied() {
+    void game_tied() {
         this.writeCommand(GAME_TIED);
     }
 
